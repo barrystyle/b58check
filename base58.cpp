@@ -6,7 +6,7 @@
 
 #include <hash.h>
 #include <uint256.h>
-#include <strencodings.h>
+#include <utilstrencodings.h>
 
 #include <assert.h>
 #include <string.h>
@@ -134,8 +134,9 @@ bool DecodeBase58(const std::string& str, std::vector<unsigned char>& vchRet)
 std::string EncodeBase58Check(const std::vector<unsigned char>& vchIn)
 {
     // add 4-byte hash check to the end
+    uint256 hash;
     std::vector<unsigned char> vch(vchIn);
-    uint256 hash = Hash(vch.begin(), vch.end());
+    sha256((const char*)vch.data(), (char*)&hash, vch.size());
     vch.insert(vch.end(), (unsigned char*)&hash, (unsigned char*)&hash + 4);
     return EncodeBase58(vch);
 }
@@ -148,7 +149,8 @@ bool DecodeBase58Check(const char* psz, std::vector<unsigned char>& vchRet)
         return false;
     }
     // re-calculate the checksum, ensure it matches the included 4-byte checksum
-    uint256 hash = Hash(vchRet.begin(), vchRet.end() - 4);
+    uint256 hash;
+    sha256((const char*)vchRet.data(), (char*)&hash, vchRet.size()-4);
     if (memcmp(&hash, &vchRet[vchRet.size() - 4], 4) != 0) {
         vchRet.clear();
         return false;
